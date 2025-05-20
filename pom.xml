@@ -11,6 +11,7 @@
 	<groupId>org.pricecomparator</groupId>
 	<artifactId>PriceComparatorAPI</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
+	<packaging>pom</packaging>
 	<name>PriceComparatorAPI</name>
 	<description>Web API for price comparisons</description>
 	<url/>
@@ -20,6 +21,9 @@
 	<developers>
 		<developer/>
 	</developers>
+	<modules>
+		<module>Model</module>
+	</modules>
 	<scm>
 		<connection/>
 		<developerConnection/>
