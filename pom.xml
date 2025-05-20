@@ -23,6 +23,9 @@
 	</developers>
 	<modules>
 		<module>Model</module>
+		<module>Repository</module>
+		<module>Service</module>
+		<module>API</module>
 	</modules>
 	<scm>
 		<connection/>
