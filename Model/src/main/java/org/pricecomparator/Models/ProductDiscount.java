@@ -9,7 +9,7 @@ import java.util.Date;
 
 @Entity
 public class ProductDiscount {
-    private @Id @GeneratedValue(strategy = GenerationType.IDENTITY) int id;
+    private @Id @GeneratedValue(strategy = GenerationType.AUTO) int id;
     private String productId;
     private Date fromDate;
     private Date toDate;
@@ -22,6 +22,18 @@ public class ProductDiscount {
         this.toDate = toDate;
         this.percentDiscount = percentDiscount;
         this.storeId = storeId;
+    }
+
+    public ProductDiscount(int id, String productId, Date fromDate, Date toDate, int percentDiscount, int storeId) {
+        this.id = id;
+        this.productId = productId;
+        this.fromDate = fromDate;
+        this.toDate = toDate;
+        this.percentDiscount = percentDiscount;
+        this.storeId = storeId;
+    }
+
+    public ProductDiscount() {
     }
 
     public int getId() {

@@ -21,6 +21,9 @@ public class Product {
         this.packageUnit = packageUnit;
     }
 
+    public Product() {
+    }
+
     public String getId() {
         return id;
     }

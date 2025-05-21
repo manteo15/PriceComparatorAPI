@@ -6,6 +6,8 @@ import org.pricecomparator.Repositories.IStoreRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class StoreService implements IStoreService {
 
@@ -16,6 +18,11 @@ public class StoreService implements IStoreService {
     public Store createStore(String storeName){
         Store store = new Store(storeName);
         return storeRepository.save(store);
+    }
+
+    @Override
+    public List<Store> getAllStores() {
+        return storeRepository.findAll();
     }
 
 }

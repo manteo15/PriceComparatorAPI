@@ -9,7 +9,7 @@ import java.util.Date;
 
 @Entity
 public class ProductPrice {
-    private @Id @GeneratedValue(strategy = GenerationType.IDENTITY) int id;
+    private @Id @GeneratedValue(strategy = GenerationType.AUTO) int id;
     private String productId;
     private int storeId;
     private float price;
@@ -22,6 +22,18 @@ public class ProductPrice {
         this.price = price;
         this.currency = currency;
         this.date = date;
+    }
+
+    public ProductPrice(int id, Date date, String currency, float price, int storeId, String productId) {
+        this.id = id;
+        this.date = date;
+        this.currency = currency;
+        this.price = price;
+        this.storeId = storeId;
+        this.productId = productId;
+    }
+
+    public ProductPrice() {
     }
 
     public int getId() {
