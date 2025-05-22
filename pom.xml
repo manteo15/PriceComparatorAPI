@@ -26,7 +26,8 @@
 		<module>Repository</module>
 		<module>Service</module>
 		<module>API</module>
-	</modules>
+        <module>Utils</module>
+    </modules>
 	<scm>
 		<connection/>
 		<developerConnection/>
@@ -45,7 +46,11 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
-
+		<dependency>
+			<groupId>com.opencsv</groupId>
+			<artifactId>opencsv</artifactId>
+			<version>5.9</version>
+		</dependency>
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>

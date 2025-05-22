@@ -1,6 +1,8 @@
 package org.pricecomparator.Models;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 @Entity
@@ -14,6 +16,14 @@ public class Product {
 
     public Product(String id, String name, String category, String brand, float quantity, String packageUnit) {
         this.id = id;
+        this.name = name;
+        this.category = category;
+        this.brand = brand;
+        this.quantity = quantity;
+        this.packageUnit = packageUnit;
+    }
+
+    public Product(String name, String category, String brand, float quantity, String packageUnit) {
         this.name = name;
         this.category = category;
         this.brand = brand;

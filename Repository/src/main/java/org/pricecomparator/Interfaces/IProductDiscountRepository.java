@@ -1,4 +1,4 @@
-package org.pricecomparator.Repositories;
+package org.pricecomparator.Interfaces;
 
 import org.pricecomparator.Models.ProductDiscount;
 import org.springframework.data.jpa.repository.JpaRepository;

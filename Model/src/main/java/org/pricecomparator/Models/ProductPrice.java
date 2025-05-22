@@ -5,6 +5,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 @Entity
@@ -14,9 +15,9 @@ public class ProductPrice {
     private int storeId;
     private float price;
     private String currency;
-    private Date date;
+    private LocalDate date;
 
-    public ProductPrice(String productId, int storeId, float price, String currency, Date date) {
+    public ProductPrice(String productId, int storeId, float price, String currency, LocalDate date) {
         this.productId = productId;
         this.storeId = storeId;
         this.price = price;
@@ -24,13 +25,13 @@ public class ProductPrice {
         this.date = date;
     }
 
-    public ProductPrice(int id, Date date, String currency, float price, int storeId, String productId) {
+    public ProductPrice(int id, String productId, int storeId, float price, String currency, LocalDate date) {
         this.id = id;
-        this.date = date;
-        this.currency = currency;
-        this.price = price;
-        this.storeId = storeId;
         this.productId = productId;
+        this.storeId = storeId;
+        this.price = price;
+        this.currency = currency;
+        this.date = date;
     }
 
     public ProductPrice() {
@@ -76,11 +77,13 @@ public class ProductPrice {
         this.currency = currency;
     }
 
-    public Date getDate() {
+    public LocalDate getDate() {
         return date;
     }
 
-    public void setDate(Date date) {
+    public void setDate(LocalDate date) {
         this.date = date;
     }
+
+
 }

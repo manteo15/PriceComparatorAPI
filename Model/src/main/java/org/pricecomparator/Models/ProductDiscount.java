@@ -5,18 +5,19 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 @Entity
 public class ProductDiscount {
     private @Id @GeneratedValue(strategy = GenerationType.AUTO) int id;
     private String productId;
-    private Date fromDate;
-    private Date toDate;
+    private LocalDate fromDate;
+    private LocalDate toDate;
     private int percentDiscount;
     private int storeId;
 
-    public ProductDiscount(String productId, Date fromDate, Date toDate, int percentDiscount, int storeId) {
+    public ProductDiscount(String productId, LocalDate fromDate, LocalDate toDate, int percentDiscount, int storeId) {
         this.productId = productId;
         this.fromDate = fromDate;
         this.toDate = toDate;
@@ -24,7 +25,7 @@ public class ProductDiscount {
         this.storeId = storeId;
     }
 
-    public ProductDiscount(int id, String productId, Date fromDate, Date toDate, int percentDiscount, int storeId) {
+    public ProductDiscount(int id, String productId, LocalDate fromDate, LocalDate toDate, int percentDiscount, int storeId) {
         this.id = id;
         this.productId = productId;
         this.fromDate = fromDate;
@@ -52,19 +53,19 @@ public class ProductDiscount {
         this.productId = productId;
     }
 
-    public Date getFromDate() {
+    public LocalDate getFromDate() {
         return fromDate;
     }
 
-    public void setFromDate(Date fromDate) {
+    public void setFromDate(LocalDate fromDate) {
         this.fromDate = fromDate;
     }
 
-    public Date getToDate() {
+    public LocalDate getToDate() {
         return toDate;
     }
 
-    public void setToDate(Date toDate) {
+    public void setToDate(LocalDate toDate) {
         this.toDate = toDate;
     }
 
