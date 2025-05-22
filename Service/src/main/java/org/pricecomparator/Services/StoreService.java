@@ -106,6 +106,27 @@ public class StoreService implements IStoreService {
         return  bestDiscountsModel;
     }
 
+    @Override
+    public List<NewlyAddedDiscountsModel> getNewlyAddedDiscounts(CurrentDateModel currentDateModel) {
+        List<ProductDiscount> productDiscounts = productDiscountRepository.getNewlyAddedProductDiscounts(LocalDate.parse(currentDateModel.getCurrentDate()));
+        List<NewlyAddedDiscountsModel> newlyAddedDiscountsModels = new ArrayList<>();
+        for(ProductDiscount pd:productDiscounts){
+            Optional<Product> product = productRepository.findById(pd.getProductId());
+            List<ProductPrice> productPrices = productPriceRepository
+                    .findAll(getProductPriceExampleByProductIdAndStoreId(pd.getProductId(), pd.getStoreId()));
+            ProductPrice productPrice = getCurrentProductPrice(productPrices, LocalDate.parse(currentDateModel.getCurrentDate()));
+            Optional<Store> store = storeRepository.findById(pd.getStoreId());
+
+            NewlyAddedDiscountsModel newlyAddedDiscountsModel = new NewlyAddedDiscountsModel(store.get().getName(), pd.getProductId(),
+                    product.get().getName(), product.get().getCategory(), product.get().getBrand(), product.get().getQuantity(),
+                    product.get().getPackageUnit(), productPrice.getPrice(), productPrice.getCurrency(), pd.getPercentDiscount());
+
+            newlyAddedDiscountsModels.add(newlyAddedDiscountsModel);
+        }
+
+        return newlyAddedDiscountsModels;
+    }
+
     private List<ProductDiscountModel> getProductDiscountModels(List<ProductDiscount> productDiscounts, String currentDate){
         List<ProductDiscountModel> productDiscountModels = new ArrayList<>();
         for(ProductDiscount pd:productDiscounts){
@@ -176,7 +197,7 @@ public class StoreService implements IStoreService {
     }
 
     @Override
-    public void uploadStorePrices(StoreCSVModel model) throws IOException {
+    public void uploadStorePrices(StoreCSVModel model)  {
         Path pathToFile = Paths.get("C:\\Users\\allee\\IdeaProjects\\PriceComparatorAPI\\Utils\\src\\main\\java\\org\\pricecomparator\\CSVs\\" +
                 model.getFileName());
         Store store = createOrGetExistingStore(model.getStoreName());
@@ -189,7 +210,7 @@ public class StoreService implements IStoreService {
     }
 
     @Override
-    public void uploadStoreDiscounts(StoreCSVModel model) throws IOException {
+    public void uploadStoreDiscounts(StoreCSVModel model)  {
         Path pathToFile = Paths.get("C:\\Users\\allee\\IdeaProjects\\PriceComparatorAPI\\Utils\\src\\main\\java\\org\\pricecomparator\\CSVs\\" +
                 model.getFileName());
         Store store = createOrGetExistingStore(model.getStoreName());

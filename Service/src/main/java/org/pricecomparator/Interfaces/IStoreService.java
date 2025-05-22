@@ -2,6 +2,7 @@ package org.pricecomparator.Interfaces;
 
 import org.pricecomparator.DTOs.BestDiscountsModel;
 import org.pricecomparator.DTOs.CurrentDateModel;
+import org.pricecomparator.DTOs.NewlyAddedDiscountsModel;
 import org.pricecomparator.DTOs.StoreCSVModel;
 import org.pricecomparator.Models.Product;
 import org.pricecomparator.Models.ProductDiscount;
@@ -25,6 +26,8 @@ public interface IStoreService {
     public List<ProductPrice> getAllProductPrices();
 
     public BestDiscountsModel getBestDiscounts(CurrentDateModel currentDateModel);
+
+    public List<NewlyAddedDiscountsModel> getNewlyAddedDiscounts(CurrentDateModel currentDateModel);
 
     public List<ProductDiscount> getAllProductDiscountsFromStore(int storeId);
 
