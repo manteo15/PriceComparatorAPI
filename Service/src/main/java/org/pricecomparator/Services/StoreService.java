@@ -4,6 +4,9 @@ import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 import com.opencsv.bean.HeaderColumnNameMappingStrategy;
 import org.pricecomparator.DTOs.*;
+import org.pricecomparator.Exceptions.InternalServerErrorException;
+import org.pricecomparator.Exceptions.StoreAlreadyExistsException;
+import org.pricecomparator.Exceptions.StoreNotFoundException;
 import org.pricecomparator.Interfaces.*;
 import org.pricecomparator.Models.Product;
 import org.pricecomparator.Models.ProductDiscount;
@@ -37,7 +40,16 @@ public class StoreService implements IStoreService {
 
     @Override
     public Store createStore(String storeName){
-        Store store = new Store(storeName);
+        Store store = new Store();
+        store.setName(storeName);
+        ExampleMatcher matcher = ExampleMatcher.matching()
+                .withIgnorePaths("id");
+        Example<Store> example = Example.of(store, matcher);
+        List<Store> stores = storeRepository.findAll(example);
+        if(!stores.isEmpty()){
+            throw new StoreAlreadyExistsException("Store already exists!");
+        }
+
         return storeRepository.save(store);
     }
 
@@ -53,6 +65,10 @@ public class StoreService implements IStoreService {
 
     @Override
     public List<ProductPrice> getAllProductPricesFromStore(int storeId) {
+        if(!storeRepository.existsById(storeId)){
+            throw new StoreNotFoundException("Store id not found!");
+        }
+
         ProductPrice productPrice = new ProductPrice();
         productPrice.setStoreId(storeId);
 
@@ -61,6 +77,7 @@ public class StoreService implements IStoreService {
                 .withIgnorePaths("id");
 
         Example<ProductPrice> example = Example.of(productPrice, matcher);
+
         return productPriceRepository.findAll(example);
     }
 
@@ -140,8 +157,10 @@ public class StoreService implements IStoreService {
 
     @Override
     public List<ProductDiscount> getAllProductDiscountsFromStore(int storeId) {
+        if(!storeRepository.existsById(storeId)){
+            throw new StoreNotFoundException("Store id not found!");
+        }
         Example<ProductDiscount> example = getProductDiscountExampleByStoreId(storeId);
-
         return productDiscountRepository.findAll(example);
     }
 
@@ -179,7 +198,7 @@ public class StoreService implements IStoreService {
         productDiscountRepository.saveAll(productDiscounts);
     }
 
-    private List<StorePricesCSVModel> parseStorePricesCSV(Path pathToFile) throws IOException{
+    private List<StorePricesCSVModel> parseStorePricesCSV(Path pathToFile) {
         try(Reader reader = new BufferedReader(new InputStreamReader(Files.newInputStream(pathToFile)))) {
             HeaderColumnNameMappingStrategy<StorePricesCSVModel> strategy = new HeaderColumnNameMappingStrategy<>();
             strategy.setType(StorePricesCSVModel.class);
@@ -191,10 +210,12 @@ public class StoreService implements IStoreService {
                     .build();
 
             return  csvToBean.parse();
+        } catch (IOException e) {
+            throw new InternalServerErrorException("An internal server error occurred!");
         }
     }
 
-    private List<StoreDiscountsCSVModel> parseStoreDiscountsCSV(Path pathToFile) throws IOException{
+    private List<StoreDiscountsCSVModel> parseStoreDiscountsCSV(Path pathToFile){
         try(Reader reader = new BufferedReader(new InputStreamReader(Files.newInputStream(pathToFile)))) {
             HeaderColumnNameMappingStrategy<StoreDiscountsCSVModel> strategy = new HeaderColumnNameMappingStrategy<>();
             strategy.setType(StoreDiscountsCSVModel.class);
@@ -206,6 +227,8 @@ public class StoreService implements IStoreService {
                     .build();
 
             return  csvToBean.parse();
+        } catch (IOException e) {
+            throw new InternalServerErrorException("An internal server error occurred!");
         }
     }
 

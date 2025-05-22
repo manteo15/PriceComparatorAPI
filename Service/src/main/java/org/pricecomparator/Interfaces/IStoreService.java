@@ -28,8 +28,8 @@ public interface IStoreService {
 
     public List<ProductDiscount> getAllProductDiscountsFromStore(int storeId);
 
-    public void uploadStorePrices(StoreCSVModel model) throws IOException;
+    public void uploadStorePrices(StoreCSVModel model);
 
-    public void uploadStoreDiscounts(StoreCSVModel model) throws IOException;
+    public void uploadStoreDiscounts(StoreCSVModel model);
 
 }
