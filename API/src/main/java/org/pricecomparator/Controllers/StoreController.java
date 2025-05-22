@@ -1,5 +1,7 @@
 package org.pricecomparator.Controllers;
 
+import org.pricecomparator.DTOs.BestDiscountsModel;
+import org.pricecomparator.DTOs.CurrentDateModel;
 import org.pricecomparator.DTOs.StoreCSVModel;
 import org.pricecomparator.Models.Product;
 import org.pricecomparator.Models.ProductDiscount;
@@ -7,6 +9,7 @@ import org.pricecomparator.Models.ProductPrice;
 import org.pricecomparator.Interfaces.IStoreService;
 import org.pricecomparator.Models.Store;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.web.bind.annotation.*;
 
@@ -60,5 +63,10 @@ public class StoreController {
     @GetMapping("/productDiscounts/{storeId}")
     public List<ProductDiscount> getProductDiscounts(@PathVariable int storeId){
         return storeService.getAllProductDiscountsFromStore(storeId);
+    }
+
+    @GetMapping("/bestDiscounts")
+    public BestDiscountsModel getBestDiscounts(@RequestBody CurrentDateModel model){
+        return storeService.getBestDiscounts(model);
     }
 }

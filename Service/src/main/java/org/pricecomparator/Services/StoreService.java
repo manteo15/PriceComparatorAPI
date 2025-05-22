@@ -3,9 +3,7 @@ package org.pricecomparator.Services;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 import com.opencsv.bean.HeaderColumnNameMappingStrategy;
-import org.pricecomparator.DTOs.StoreDiscountsCSVModel;
-import org.pricecomparator.DTOs.StorePricesCSVModel;
-import org.pricecomparator.DTOs.StoreCSVModel;
+import org.pricecomparator.DTOs.*;
 import org.pricecomparator.Interfaces.*;
 import org.pricecomparator.Models.Product;
 import org.pricecomparator.Models.ProductDiscount;
@@ -14,8 +12,7 @@ import org.pricecomparator.Models.Store;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -23,8 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Service
 public class StoreService implements IStoreService {
@@ -74,7 +70,82 @@ public class StoreService implements IStoreService {
     }
 
     @Override
+    public BestDiscountsModel getBestDiscounts(CurrentDateModel currentDateModel) {
+        List<Store> stores = getAllStores();
+        BestDiscountsModel bestDiscountsModel = new BestDiscountsModel();
+        Map<String, List<ProductDiscountModel>> bestStoreDiscounts = new HashMap<>();
+        for(Store s:stores){
+            List<ProductDiscount> productDiscounts = productDiscountRepository.getAllCurrentFromStoreOrderedByDiscount(s.getId(),
+                    LocalDate.parse(currentDateModel.getCurrentDate()));
+            List<ProductDiscountModel> productDiscountModels = new ArrayList<>();
+            if(productDiscounts.size() > 3){
+                productDiscountModels = getProductDiscountModels(productDiscounts.subList(0, 3), currentDateModel.getCurrentDate());
+            } else{
+                productDiscountModels = getProductDiscountModels(productDiscounts, currentDateModel.getCurrentDate());
+            }
+            bestStoreDiscounts.put(s.getName(), productDiscountModels);
+        }
+        bestDiscountsModel.setBestStoreDiscounts(bestStoreDiscounts);
+        return  bestDiscountsModel;
+    }
+
+    private List<ProductDiscountModel> getProductDiscountModels(List<ProductDiscount> productDiscounts, String currentDate){
+        List<ProductDiscountModel> productDiscountModels = new ArrayList<>();
+        for(ProductDiscount pd:productDiscounts){
+            Optional<Product> product = productRepository.findById(pd.getProductId());
+            List<ProductPrice> productPrices = productPriceRepository
+                    .findAll(getProductPriceExampleByProductIdAndStoreId(pd.getProductId(), pd.getStoreId()));
+            ProductPrice productPrice = getCurrentProductPrice(productPrices, LocalDate.parse(currentDate));
+
+            ProductDiscountModel productDiscountModel = new ProductDiscountModel(pd.getProductId(), product.get().getName(),
+                        product.get().getCategory(), product.get().getBrand(), product.get().getQuantity(), product.get().getPackageUnit(),
+                        productPrice.getPrice(), productPrice.getCurrency(), pd.getPercentDiscount());
+
+            productDiscountModels.add(productDiscountModel);
+        }
+
+        return productDiscountModels;
+    }
+
+    private ProductPrice getCurrentProductPrice(List<ProductPrice> productPrices, LocalDate currentDate){
+        ProductPrice currentProductPrice = null;
+        LocalDate mostRecentDate = null;
+        for(ProductPrice pd:productPrices){
+            if(pd.getDate().isBefore(currentDate) || pd.getDate().isEqual(currentDate) ) {
+                if(mostRecentDate == null){
+                    mostRecentDate = pd.getDate();
+                    currentProductPrice = pd;
+                }else{
+                    if(mostRecentDate.isBefore(pd.getDate())){
+                        mostRecentDate = pd.getDate();
+                        currentProductPrice = pd;
+                    }
+                }
+            }
+        }
+        return currentProductPrice;
+    }
+
+    private Example<ProductPrice> getProductPriceExampleByProductIdAndStoreId(String productId, int storeId){
+        ProductPrice productPrice = new ProductPrice();
+        productPrice.setStoreId(storeId);
+        productPrice.setProductId(productId);
+
+        ExampleMatcher matcher = ExampleMatcher.matching()
+                .withIgnorePaths("price")
+                .withIgnorePaths("id");
+
+        return Example.of(productPrice, matcher);
+    }
+
+    @Override
     public List<ProductDiscount> getAllProductDiscountsFromStore(int storeId) {
+        Example<ProductDiscount> example = getProductDiscountExampleByStoreId(storeId);
+
+        return productDiscountRepository.findAll(example);
+    }
+
+    private Example<ProductDiscount> getProductDiscountExampleByStoreId(int storeId){
         ProductDiscount productDiscount = new ProductDiscount();
         productDiscount.setStoreId(storeId);
 
@@ -82,9 +153,7 @@ public class StoreService implements IStoreService {
                 .withIgnorePaths("percentDiscount")
                 .withIgnorePaths("id");
 
-        Example<ProductDiscount> example = Example.of(productDiscount, matcher);
-
-        return productDiscountRepository.findAll(example);
+        return Example.of(productDiscount, matcher);
     }
 
     @Override
