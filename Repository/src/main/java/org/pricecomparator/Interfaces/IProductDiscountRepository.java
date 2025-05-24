@@ -16,4 +16,7 @@ public interface IProductDiscountRepository extends JpaRepository<ProductDiscoun
 
     @Query("Select pd from ProductDiscount pd where pd.fromDate = :currentDate")
     public List<ProductDiscount> getNewlyAddedProductDiscounts(LocalDate currentDate);
+
+    @Query("Select pd from ProductDiscount pd where pd.productId = :productId and pd.fromDate <= :currentDate and pd.toDate > :currentDate")
+    public List<ProductDiscount> getCurrentProductDiscounts(String productId, LocalDate currentDate);
 }

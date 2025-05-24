@@ -8,13 +8,15 @@ public class NewlyAddedDiscountsModel {
     private String productBrand;
     private float packageQuantity;
     private String packageUnit;
+    private String valuePerUnit;
+    private int storeId;
     private float price;
     private String currency;
     private int percentageOfDiscount;
 
     public NewlyAddedDiscountsModel(String storeName, String productId, String productName, String productCategory,
-                                    String productBrand, float packageQuantity, String packageUnit, float price, String currency,
-                                    int percentageOfDiscount) {
+                                    String productBrand, float packageQuantity, String packageUnit, String valuePerUnit, float price, String currency,
+                                    int percentageOfDiscount, int storeId) {
         this.storeName = storeName;
         this.productId = productId;
         this.productName = productName;
@@ -22,9 +24,11 @@ public class NewlyAddedDiscountsModel {
         this.productBrand = productBrand;
         this.packageQuantity = packageQuantity;
         this.packageUnit = packageUnit;
+        this.valuePerUnit = valuePerUnit;
         this.price = price;
         this.currency = currency;
         this.percentageOfDiscount = percentageOfDiscount;
+        this.storeId = storeId;
     }
 
     public NewlyAddedDiscountsModel() {
@@ -108,5 +112,21 @@ public class NewlyAddedDiscountsModel {
 
     public void setPercentageOfDiscount(int percentageOfDiscount) {
         this.percentageOfDiscount = percentageOfDiscount;
+    }
+
+    public int getStoreId() {
+        return storeId;
+    }
+
+    public void setStoreId(int storeId) {
+        this.storeId = storeId;
+    }
+
+    public String getValuePerUnit() {
+        return valuePerUnit;
+    }
+
+    public void setValuePerUnit(String valuePerUnit) {
+        this.valuePerUnit = valuePerUnit;
     }
 }

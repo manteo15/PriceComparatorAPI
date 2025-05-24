@@ -1,9 +1,6 @@
 package org.pricecomparator.DTOs;
 
-import java.time.LocalDate;
-
-public class ProductDiscountModel {
-
+public class BestProductPriceModel {
     private String productId;
     private String productName;
     private String productCategory;
@@ -16,8 +13,8 @@ public class ProductDiscountModel {
     private String currency;
     private int percentageOfDiscount;
 
-    public ProductDiscountModel(String productId, String productName, String productCategory, String productBrand, float packageQuantity,
-                                String packageUnit, String valuePerUnit, int storeId, float price, String currency, int percentageOfDiscount) {
+    public BestProductPriceModel(String productId, String productName, String productCategory, String productBrand, float packageQuantity, String packageUnit,
+                                 String valuePerUnit, int storeId, float price, String currency, int percentageOfDiscount) {
         this.productId = productId;
         this.productName = productName;
         this.productCategory = productCategory;
@@ -31,7 +28,7 @@ public class ProductDiscountModel {
         this.percentageOfDiscount = percentageOfDiscount;
     }
 
-    public ProductDiscountModel() {
+    public BestProductPriceModel() {
     }
 
     public String getProductId() {

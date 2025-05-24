@@ -1,9 +1,6 @@
 package org.pricecomparator.Controllers;
 
-import org.pricecomparator.DTOs.BestDiscountsModel;
-import org.pricecomparator.DTOs.CurrentDateModel;
-import org.pricecomparator.DTOs.NewlyAddedDiscountsModel;
-import org.pricecomparator.DTOs.StoreCSVModel;
+import org.pricecomparator.DTOs.*;
 import org.pricecomparator.Models.Product;
 import org.pricecomparator.Models.ProductDiscount;
 import org.pricecomparator.Models.ProductPrice;
@@ -75,5 +72,10 @@ public class StoreController {
     @GetMapping("/newDiscounts")
     public ResponseEntity<List<NewlyAddedDiscountsModel>> getNewlyAddedDiscounts(@RequestBody CurrentDateModel model){
         return new ResponseEntity<>(storeService.getNewlyAddedDiscounts(model), HttpStatusCode.valueOf(200));
+    }
+
+    @GetMapping("/shoppingBasket")
+    public ResponseEntity<ShoppingBasketMonitoringModel> getShoppingBasket(@RequestBody ShoppingBasketProductsModel model){
+        return new ResponseEntity<>(storeService.getShoppingBasket(model), HttpStatusCode.valueOf(200));
     }
 }

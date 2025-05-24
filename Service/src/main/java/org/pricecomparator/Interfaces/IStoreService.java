@@ -1,9 +1,6 @@
 package org.pricecomparator.Interfaces;
 
-import org.pricecomparator.DTOs.BestDiscountsModel;
-import org.pricecomparator.DTOs.CurrentDateModel;
-import org.pricecomparator.DTOs.NewlyAddedDiscountsModel;
-import org.pricecomparator.DTOs.StoreCSVModel;
+import org.pricecomparator.DTOs.*;
 import org.pricecomparator.Models.Product;
 import org.pricecomparator.Models.ProductDiscount;
 import org.pricecomparator.Models.ProductPrice;
@@ -30,6 +27,8 @@ public interface IStoreService {
     public List<NewlyAddedDiscountsModel> getNewlyAddedDiscounts(CurrentDateModel currentDateModel);
 
     public List<ProductDiscount> getAllProductDiscountsFromStore(int storeId);
+
+    public ShoppingBasketMonitoringModel getShoppingBasket(ShoppingBasketProductsModel model);
 
     public void uploadStorePrices(StoreCSVModel model);
 
