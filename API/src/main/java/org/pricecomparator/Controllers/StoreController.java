@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -32,12 +33,18 @@ public class StoreController {
         return new ResponseEntity<>(storeService.createStore(storeName), HttpStatusCode.valueOf(201));
     }
 
+    /*
+    The model contains the name of the file, the store name and the date when the prices are added
+     */
     @PostMapping("/uploadPrices")
     public HttpStatusCode uploadStorePrice(@RequestBody StoreCSVModel model) {
         storeService.uploadStorePrices(model);
         return HttpStatusCode.valueOf(200);
     }
 
+    /*
+    The model contains the name of the file, the store name and the date when the prices are added
+     */
     @PostMapping("/uploadDiscounts")
     public HttpStatusCode uploadStoreDiscounts(@RequestBody StoreCSVModel model) {
         storeService.uploadStoreDiscounts(model);
@@ -64,18 +71,36 @@ public class StoreController {
         return new ResponseEntity<>(storeService.getAllProductDiscountsFromStore(storeId), HttpStatusCode.valueOf(200));
     }
 
+    // The model contains the current date
     @GetMapping("/bestDiscounts")
     public ResponseEntity<BestDiscountsModel> getBestDiscounts(@RequestBody CurrentDateModel model){
         return new ResponseEntity<>(storeService.getBestDiscounts(model), HttpStatusCode.valueOf(200));
     }
 
+    // The model contains the current date
     @GetMapping("/newDiscounts")
     public ResponseEntity<List<NewlyAddedDiscountsModel>> getNewlyAddedDiscounts(@RequestBody CurrentDateModel model){
         return new ResponseEntity<>(storeService.getNewlyAddedDiscounts(model), HttpStatusCode.valueOf(200));
     }
 
+    /*
+    The model contains the current date and a list of product ids
+    Returns a model containing the stores and their best prices per product
+     */
     @GetMapping("/shoppingBasket")
     public ResponseEntity<ShoppingBasketMonitoringModel> getShoppingBasket(@RequestBody ShoppingBasketProductsModel model){
         return new ResponseEntity<>(storeService.getShoppingBasket(model), HttpStatusCode.valueOf(200));
+    }
+
+    /*
+    The model contains current date, category, store id and brand
+    The api returns price history until the current date
+    If the store id is 0, the api returns data from all stores
+    If the category or brand is empty, it returns data from all categories and brands
+    If store id, category and brand have values, it filters based on its values
+     */
+    @GetMapping("/priceHistory")
+    public ResponseEntity<List<DynamicPriceHistoryModel>> getPriceHistory(@RequestBody PriceHistoryFilterModel model){
+        return new ResponseEntity<>(storeService.getDynamicPriceHistory(model), HttpStatusCode.valueOf(200));
     }
 }

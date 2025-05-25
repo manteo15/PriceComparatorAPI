@@ -86,6 +86,7 @@ public class StoreService implements IStoreService {
         return productPriceRepository.findAll();
     }
 
+    // returns best 3 discounts from every store
     @Override
     public BestDiscountsModel getBestDiscounts(CurrentDateModel currentDateModel) {
         List<Store> stores = getAllStores();
@@ -130,6 +131,7 @@ public class StoreService implements IStoreService {
         return newlyAddedDiscountsModels;
     }
 
+    // returns a model containing data about the product, current price, store, discount and value per unit
     private List<ProductDiscountModel> getProductDiscountModels(List<ProductDiscount> productDiscounts, String currentDate){
         List<ProductDiscountModel> productDiscountModels = new ArrayList<>();
         for(ProductDiscount pd:productDiscounts){
@@ -151,6 +153,9 @@ public class StoreService implements IStoreService {
         return productDiscountModels;
     }
 
+    /*
+    It receives a list of productPrices and the current date and returns the productPrice that is currently active in the store
+     */
     private ProductPrice getCurrentProductPrice(List<ProductPrice> productPrices, LocalDate currentDate){
         ProductPrice currentProductPrice = null;
         LocalDate mostRecentDate = null;
@@ -191,6 +196,10 @@ public class StoreService implements IStoreService {
         return productDiscountRepository.findAll(example);
     }
 
+    /*
+    For every product, the method calculates which store has the best price and creates a model with data from product, price, discount and store
+    It returns a map with the key being the store name and the value list of products with the best price from that store
+     */
     @Override
     public ShoppingBasketMonitoringModel getShoppingBasket(ShoppingBasketProductsModel model) {
         ShoppingBasketMonitoringModel shoppingBasketMonitoringModel = new ShoppingBasketMonitoringModel();
@@ -211,6 +220,175 @@ public class StoreService implements IStoreService {
         return shoppingBasketMonitoringModel;
     }
 
+    //For every product, a model containing price trend models is returned
+    @Override
+    public List<DynamicPriceHistoryModel> getDynamicPriceHistory(PriceHistoryFilterModel model) {
+        List<Product> products = getProductsByCategoryOrBrand(model);
+        List<DynamicPriceHistoryModel> dynamicPriceHistoryModels = new ArrayList<>();
+        for(Product p:products){
+            DynamicPriceHistoryModel dynamicPriceHistoryModel = getDynamicPriceHistoryModelOfProduct(p, model);
+            dynamicPriceHistoryModels.add(dynamicPriceHistoryModel);
+        }
+        return dynamicPriceHistoryModels;
+    }
+
+    private List<Product> getProductsByCategoryOrBrand(PriceHistoryFilterModel model){
+        Product product = new Product();
+        if(!model.getCategory().isEmpty()){
+            if(!model.getBrand().isEmpty()){
+                product.setCategory(model.getCategory());
+                product.setBrand(model.getBrand());
+            }else{
+                product.setCategory(model.getCategory());
+            }
+        }else{
+            if(!model.getBrand().isEmpty()){
+                product.setBrand(model.getBrand());
+            }else{
+                return productRepository.findAll();
+            }
+        }
+
+        ExampleMatcher matcher = ExampleMatcher.matching()
+                .withIgnorePaths("id")
+                .withIgnorePaths("quantity");
+        Example<Product> example = Example.of(product, matcher);
+        return productRepository.findAll(example);
+    }
+
+    //For every store a list of price trend models is returned
+    private DynamicPriceHistoryModel getDynamicPriceHistoryModelOfProduct(Product product, PriceHistoryFilterModel model){
+        DynamicPriceHistoryModel dynamicPriceHistoryModel = new DynamicPriceHistoryModel(product.getId(), product.getName(), product.getCategory(), product.getBrand(),
+                product.getQuantity(), product.getPackageUnit());
+        Map<Integer, List<PriceTrendModel>> storePriceTrendModels = new HashMap<>();
+        List<Integer> storeIds = new ArrayList<>();
+        if(model.getStoreId() == 0){
+            storeIds = productPriceRepository.getStoreIdsUntilDate(product.getId(),LocalDate.parse(model.getCurrentDate()) );
+        }else{
+            storeIds.add(model.getStoreId());
+        }
+
+        for(Integer storeId:storeIds){
+            List<PriceTrendModel> priceTrendModels = getDynamicPriceHistoryModelOfProductByStore(product, model, storeId);
+            if(!priceTrendModels.isEmpty()){
+                storePriceTrendModels.put(storeId, priceTrendModels);
+            }
+        }
+
+        dynamicPriceHistoryModel.setPriceTrends(storePriceTrendModels);
+        return  dynamicPriceHistoryModel;
+    }
+
+    /*
+    lists of product prices and discounts are requested for product by storeId
+    A list of price trend models are created and returned
+    Example: P034;cafea măcinată;Davidoff;0.25;kg;cafea; store = lidl
+    2025-05-01 - 2025-05-07 - 22.40 RON
+    2025-05-08 - 2025-05-14 - 22.60 RON
+    2025-05-04 - 2025-05-10; discount - 12
+    2025-05-10 - 2025-05-16; discount - 15
+
+    2025-05-01 - 2025-05-04 - 22.40 RON price
+    2025-05-05 - 2025-05-07 - 22.40 RON with 12 discount
+    2025-05-08 - 2025-05-10 - 22.60 RON with 12 discount
+    2025-05-11 - 2025-05-14 - 22.60 RON with 15 discount
+     */
+    private List<PriceTrendModel> getDynamicPriceHistoryModelOfProductByStore(Product product, PriceHistoryFilterModel model, int storeId){
+        List<ProductPrice> productPrices = productPriceRepository.getAllByStoreIdUntilDateOrderedByDate(product.getId(),storeId, LocalDate.parse(model.getCurrentDate()));
+        List<ProductDiscount> productDiscounts = productDiscountRepository.getAllByStoreIdUntilDateOrderedByDate(product.getId(), storeId, LocalDate.parse(model.getCurrentDate()));
+        ProductPrice currentProductPrice = new ProductPrice();
+        Optional<Store> store = storeRepository.findById(storeId);
+        LocalDate currentPriceTrendDate = productPrices.getFirst().getDate();
+        LocalDate currentDate = LocalDate.parse(model.getCurrentDate());
+        ProductDiscount currentProductDiscount = new ProductDiscount();
+        List<PriceTrendModel> priceTrendModels = new ArrayList<>();
+        while(!productPrices.isEmpty()){
+            currentProductPrice = productPrices.getFirst();
+            PriceTrendModel priceTrendModel = new PriceTrendModel();
+            priceTrendModel.setCurrency(currentProductPrice.getCurrency());
+            priceTrendModel.setFromDate(currentPriceTrendDate);
+            priceTrendModel.setStoreName(store.get().getName());
+            priceTrendModel.setPrice(currentProductPrice.getPrice());
+            if(!productDiscounts.isEmpty()){
+                currentProductDiscount = productDiscounts.getFirst();
+                if(currentProductPrice.getDate().isBefore(currentProductDiscount.getFromDate())){
+                    if(currentDate.isBefore(currentProductDiscount.getFromDate()) || currentDate.isEqual(currentProductDiscount.getFromDate())){
+                        priceTrendModel.setToDate(currentDate);
+                        priceTrendModel.setDiscountPercentage(0);
+                        currentPriceTrendDate = currentDate;
+                        productPrices.clear();
+                    }else{
+                        priceTrendModel.setToDate(currentProductDiscount.getFromDate());
+                        priceTrendModel.setDiscountPercentage(0);
+                        currentPriceTrendDate = currentProductDiscount.getFromDate().plusDays(1);
+                    }
+                }else {
+                    if(currentProductPrice.getDate().plusDays(6).isBefore(currentProductDiscount.getToDate())){
+                        if(currentDate.isBefore(currentProductPrice.getDate().plusDays(6)) ||
+                                currentDate.isEqual(currentProductPrice.getDate().plusDays(6))){
+                            priceTrendModel.setToDate(currentDate);
+                            priceTrendModel.setDiscountPercentage(currentProductDiscount.getPercentDiscount());
+                            currentPriceTrendDate = currentDate;
+                            productPrices.clear();
+                        }else{
+                            priceTrendModel.setToDate(currentProductPrice.getDate().plusDays(6));
+                            priceTrendModel.setDiscountPercentage(currentProductDiscount.getPercentDiscount());
+                            currentPriceTrendDate = currentProductPrice.getDate().plusDays(7);
+                            productPrices.removeFirst();
+                        }
+                    } else if (currentProductPrice.getDate().plusDays(6).isEqual(currentProductDiscount.getToDate())) {
+                        if(currentDate.isBefore(currentProductPrice.getDate().plusDays(6)) ||
+                                currentDate.isEqual(currentProductPrice.getDate().plusDays(6))){
+                            priceTrendModel.setToDate(currentDate);
+                            priceTrendModel.setDiscountPercentage(currentProductDiscount.getPercentDiscount());
+                            currentPriceTrendDate = currentDate;
+                            productPrices.clear();
+                        } else{
+                            priceTrendModel.setToDate(currentProductPrice.getDate().plusDays(6));
+                            priceTrendModel.setDiscountPercentage(currentProductDiscount.getPercentDiscount());
+                            currentPriceTrendDate = currentProductPrice.getDate().plusDays(7);
+                            productPrices.removeFirst();
+                            productDiscounts.removeFirst();
+                        }
+                    } else{
+                        if(currentDate.isBefore(currentProductDiscount.getToDate()) ||
+                                currentDate.isEqual(currentProductDiscount.getToDate())){
+                            priceTrendModel.setToDate(currentDate);
+                            priceTrendModel.setDiscountPercentage(currentProductDiscount.getPercentDiscount());
+                            currentPriceTrendDate = currentDate;
+                            productPrices.clear();
+                        } else{
+                            priceTrendModel.setToDate(currentProductDiscount.getToDate());
+                            priceTrendModel.setDiscountPercentage(currentProductDiscount.getPercentDiscount());
+                            currentPriceTrendDate = currentProductDiscount.getToDate().plusDays(1);
+                            productDiscounts.removeFirst();
+                        }
+                    }
+                }
+            } else{
+                if(currentDate.isBefore(currentProductPrice.getDate().plusDays(6)) ||
+                        currentDate.isEqual(currentProductPrice.getDate().plusDays(6))){
+                    priceTrendModel.setToDate(currentDate);
+                    priceTrendModel.setDiscountPercentage(0);
+                    currentPriceTrendDate = currentDate;
+                    productPrices.clear();
+                } else{
+                    priceTrendModel.setDiscountPercentage(0);
+                    priceTrendModel.setToDate(currentProductPrice.getDate().plusDays(6));
+                    currentPriceTrendDate = currentProductPrice.getDate().plusDays(7);
+                    productPrices.removeFirst();
+                }
+            }
+            priceTrendModels.add(priceTrendModel);
+        }
+        return priceTrendModels;
+    }
+
+    /*
+    The product, its prices and discounts from every store is requested from db
+    It is calculated which store has the best price calculated with the discount
+    The model with data relating to the product, price, store, discount and valuePerUnit is created and returned
+     */
     private BestProductPriceModel getBestProductPriceModel(String productId, String currentDate){
         float bestPrice = 0;
         int storeWithBestPrice = 0;
@@ -269,6 +447,12 @@ public class StoreService implements IStoreService {
         return valuePerUnit;
     }
 
+
+    /*
+    It receives a list of ProductPrices from different stores and a current date
+    The list is separated in lists with product prices from every store
+    Then a map is created and returned with the key being the store id and the value being the product price from every store that is active
+     */
     private Map<Integer, ProductPrice> getCurrentProductPricesByStore(List<ProductPrice> productPrices, LocalDate currentDate){
         Map<Integer, ProductPrice> currentProductPricesByStore = new HashMap<>();
         Map<Integer,List<ProductPrice>> productPricesByStore = new HashMap<>();
@@ -314,6 +498,13 @@ public class StoreService implements IStoreService {
         return Example.of(productDiscount, matcher);
     }
 
+
+    /*
+        Creates the path of the file by combining the absolute path of the folder where the CSVs are stored + the filename
+        It creates the store if it does not exist or gets the store from db
+        It parses the CSV and puts the data in a list of model objects that matches the CSV
+        From the list of model objects, it maps to a list of products and productPrices and saves them to db
+     */
     @Override
     public void uploadStorePrices(StoreCSVModel model)  {
         Path pathToFile = Paths.get("C:\\Users\\allee\\IdeaProjects\\PriceComparatorAPI\\Utils\\src\\main\\java\\org\\pricecomparator\\CSVs\\" +
@@ -327,6 +518,12 @@ public class StoreService implements IStoreService {
         productPriceRepository.saveAll(productPrices);
     }
 
+    /*
+        Creates the path of the file by combining the absolute path of the folder where the CSVs are stored + the filename
+        It creates the store if it does not exist or gets the store from db
+        It parses the CSV and puts the data in a list of model objects that matches the CSV
+        From the list of model objects, it maps to a list of productDiscounts and saves them to db
+     */
     @Override
     public void uploadStoreDiscounts(StoreCSVModel model)  {
         Path pathToFile = Paths.get("C:\\Users\\allee\\IdeaProjects\\PriceComparatorAPI\\Utils\\src\\main\\java\\org\\pricecomparator\\CSVs\\" +
@@ -337,6 +534,8 @@ public class StoreService implements IStoreService {
         productDiscountRepository.saveAll(productDiscounts);
     }
 
+
+    // Parses the CSV and returns a list of model objects matching the CSV
     private List<StorePricesCSVModel> parseStorePricesCSV(Path pathToFile) {
         try(Reader reader = new BufferedReader(new InputStreamReader(Files.newInputStream(pathToFile)))) {
             HeaderColumnNameMappingStrategy<StorePricesCSVModel> strategy = new HeaderColumnNameMappingStrategy<>();
@@ -354,6 +553,7 @@ public class StoreService implements IStoreService {
         }
     }
 
+    // Parses the CSV and returns a list of model objects matching the CSV
     private List<StoreDiscountsCSVModel> parseStoreDiscountsCSV(Path pathToFile){
         try(Reader reader = new BufferedReader(new InputStreamReader(Files.newInputStream(pathToFile)))) {
             HeaderColumnNameMappingStrategy<StoreDiscountsCSVModel> strategy = new HeaderColumnNameMappingStrategy<>();

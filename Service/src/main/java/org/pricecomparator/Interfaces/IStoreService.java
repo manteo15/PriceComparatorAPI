@@ -8,6 +8,7 @@ import org.pricecomparator.Models.Store;
 import org.springframework.data.domain.Page;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.List;
 
 public interface IStoreService {
@@ -29,6 +30,8 @@ public interface IStoreService {
     public List<ProductDiscount> getAllProductDiscountsFromStore(int storeId);
 
     public ShoppingBasketMonitoringModel getShoppingBasket(ShoppingBasketProductsModel model);
+
+    public List<DynamicPriceHistoryModel> getDynamicPriceHistory(PriceHistoryFilterModel model);
 
     public void uploadStorePrices(StoreCSVModel model);
 
