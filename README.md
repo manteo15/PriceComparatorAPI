@@ -1,11 +1,11 @@
 PROJECT STRUCTURE
 
 The project is split in 5 modules:
--Model: it contains the entities
--Repository: it contains the repositories for entities created
--Service: it contains the store service
--API: it contains the main and the controllers
--Utils: it contains the CSV's, models used to receive and return from endpoints and exceptions
+-Model: it contains the entities;
+-Repository: it contains the repositories for entities created;
+-Service: it contains the store service;
+-API: it contains the main and the controllers;
+-Utils: it contains the CSV's, models used to receive and return from endpoints and exceptions;
 
 The application was built using Maven, Spring Boot and H2 database.
 
