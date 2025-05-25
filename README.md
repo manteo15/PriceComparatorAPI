@@ -1,6 +1,6 @@
 PROJECT STRUCTURE
 
-The project is split in 5 modules:
+The project is split in 5 modules:<br />
 -Model: it contains the entities<br />
 -Repository: it contains the repositories for entities created<br />
 -Service: it contains the store service<br />
