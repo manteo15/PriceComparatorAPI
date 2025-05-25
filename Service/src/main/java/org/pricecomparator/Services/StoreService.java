@@ -232,6 +232,19 @@ public class StoreService implements IStoreService {
         return dynamicPriceHistoryModels;
     }
 
+    // A list of price trend models are created and returned
+    @Override
+    public List<PriceTrendModel> getPriceAlert(PriceAlertModel model) {
+        List<Integer> storeIds = productPriceRepository.getStoreIdsWithProduct(model.getProductId());
+        List<PriceTrendModel> priceAlerts = new ArrayList<>();
+
+        for(Integer storeId:storeIds){
+            priceAlerts.addAll(getPriceAlertOfProductByStore(model, storeId));
+        }
+
+        return priceAlerts;
+    }
+
     private List<Product> getProductsByCategoryOrBrand(PriceHistoryFilterModel model){
         Product product = new Product();
         if(!model.getCategory().isEmpty()){
@@ -263,13 +276,13 @@ public class StoreService implements IStoreService {
         Map<Integer, List<PriceTrendModel>> storePriceTrendModels = new HashMap<>();
         List<Integer> storeIds = new ArrayList<>();
         if(model.getStoreId() == 0){
-            storeIds = productPriceRepository.getStoreIdsUntilDate(product.getId(),LocalDate.parse(model.getCurrentDate()) );
+            storeIds = productPriceRepository.getStoreIdsUntilDate(product.getId(),LocalDate.parse(model.getCurrentDate()));
         }else{
             storeIds.add(model.getStoreId());
         }
 
         for(Integer storeId:storeIds){
-            List<PriceTrendModel> priceTrendModels = getDynamicPriceHistoryModelOfProductByStore(product, model, storeId);
+            List<PriceTrendModel> priceTrendModels = getDynamicPriceHistoryModelOfProductByStore(product.getId(), model, storeId);
             if(!priceTrendModels.isEmpty()){
                 storePriceTrendModels.put(storeId, priceTrendModels);
             }
@@ -293,9 +306,9 @@ public class StoreService implements IStoreService {
     2025-05-08 - 2025-05-10 - 22.60 RON with 12 discount
     2025-05-11 - 2025-05-14 - 22.60 RON with 15 discount
      */
-    private List<PriceTrendModel> getDynamicPriceHistoryModelOfProductByStore(Product product, PriceHistoryFilterModel model, int storeId){
-        List<ProductPrice> productPrices = productPriceRepository.getAllByStoreIdUntilDateOrderedByDate(product.getId(),storeId, LocalDate.parse(model.getCurrentDate()));
-        List<ProductDiscount> productDiscounts = productDiscountRepository.getAllByStoreIdUntilDateOrderedByDate(product.getId(), storeId, LocalDate.parse(model.getCurrentDate()));
+    private List<PriceTrendModel> getDynamicPriceHistoryModelOfProductByStore(String productId, PriceHistoryFilterModel model, int storeId){
+        List<ProductPrice> productPrices = productPriceRepository.getAllByStoreIdUntilDateOrderedByDate(productId,storeId, LocalDate.parse(model.getCurrentDate()));
+        List<ProductDiscount> productDiscounts = productDiscountRepository.getAllByStoreIdUntilDateOrderedByDate(productId, storeId, LocalDate.parse(model.getCurrentDate()));
         ProductPrice currentProductPrice = new ProductPrice();
         Optional<Store> store = storeRepository.findById(storeId);
         LocalDate currentPriceTrendDate = productPrices.getFirst().getDate();
@@ -383,6 +396,68 @@ public class StoreService implements IStoreService {
         }
         return priceTrendModels;
     }
+
+    /*
+    It receives a list of current and future product prices and discounts by store
+    It is almost the same as in the getDynamicPriceHistoryModelOfProductByStore method, the only difference being that the price trend models are added
+    to the list only if the price calculated with discount is smaller than target price set by the user
+     */
+    private List<PriceTrendModel> getPriceAlertOfProductByStore(PriceAlertModel model, int storeId){
+        List<ProductPrice> productPrices = productPriceRepository.getCurrentAndFutureOfProductFromStore(model.getProductId(), storeId, LocalDate.parse(model.getCurrentDate()).minusDays(6));
+        List<ProductDiscount> productDiscounts = productDiscountRepository.getAllCurrentOfProductFromStore(model.getProductId(), storeId, LocalDate.parse(model.getCurrentDate()));
+        productDiscounts.addAll(productDiscountRepository.getAllFutureOfProductFromStore(model.getProductId(), storeId, LocalDate.parse(model.getCurrentDate())));
+        ProductPrice currentProductPrice = new ProductPrice();
+        Optional<Store> store = storeRepository.findById(storeId);
+        LocalDate currentPriceTrendDate = LocalDate.parse(model.getCurrentDate());
+        LocalDate currentDate = LocalDate.parse(model.getCurrentDate());
+        ProductDiscount currentProductDiscount = new ProductDiscount();
+        List<PriceTrendModel> priceTrendModels = new ArrayList<>();
+        while(!productPrices.isEmpty()){
+            currentProductPrice = productPrices.getFirst();
+            PriceTrendModel priceTrendModel = new PriceTrendModel();
+            priceTrendModel.setCurrency(currentProductPrice.getCurrency());
+            priceTrendModel.setFromDate(currentPriceTrendDate);
+            priceTrendModel.setStoreName(store.get().getName());
+            priceTrendModel.setPrice(currentProductPrice.getPrice());
+            if(!productDiscounts.isEmpty()){
+                currentProductDiscount = productDiscounts.getFirst();
+                if(currentProductPrice.getDate().isBefore(currentProductDiscount.getFromDate())){
+                    priceTrendModel.setToDate(currentProductDiscount.getFromDate());
+                    priceTrendModel.setDiscountPercentage(0);
+                    currentPriceTrendDate = currentProductDiscount.getFromDate().plusDays(1);
+                }else {
+                    if(currentProductPrice.getDate().plusDays(6).isBefore(currentProductDiscount.getToDate())){
+                        priceTrendModel.setToDate(currentProductPrice.getDate().plusDays(6));
+                        priceTrendModel.setDiscountPercentage(currentProductDiscount.getPercentDiscount());
+                        currentPriceTrendDate = currentProductPrice.getDate().plusDays(7);
+                        productPrices.removeFirst();
+                    } else if (currentProductPrice.getDate().plusDays(6).isEqual(currentProductDiscount.getToDate())) {
+                        priceTrendModel.setToDate(currentProductPrice.getDate().plusDays(6));
+                        priceTrendModel.setDiscountPercentage(currentProductDiscount.getPercentDiscount());
+                        currentPriceTrendDate = currentProductPrice.getDate().plusDays(7);
+                        productPrices.removeFirst();
+                        productDiscounts.removeFirst();
+                    } else{
+                        priceTrendModel.setToDate(currentProductDiscount.getToDate());
+                        priceTrendModel.setDiscountPercentage(currentProductDiscount.getPercentDiscount());
+                        currentPriceTrendDate = currentProductDiscount.getToDate().plusDays(1);
+                        productDiscounts.removeFirst();
+                    }
+                }
+            } else{
+                priceTrendModel.setDiscountPercentage(0);
+                priceTrendModel.setToDate(currentProductPrice.getDate().plusDays(6));
+                currentPriceTrendDate = currentProductPrice.getDate().plusDays(7);
+                productPrices.removeFirst();
+            }
+            float priceWithDiscount = priceTrendModel.getPrice() * (100-priceTrendModel.getDiscountPercentage()) / 100;
+            if(priceWithDiscount <= model.getTargetPrice()){
+                priceTrendModels.add(priceTrendModel);
+            }
+        }
+        return priceTrendModels;
+    }
+
 
     /*
     The product, its prices and discounts from every store is requested from db

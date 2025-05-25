@@ -33,6 +33,8 @@ public interface IStoreService {
 
     public List<DynamicPriceHistoryModel> getDynamicPriceHistory(PriceHistoryFilterModel model);
 
+    public List<PriceTrendModel> getPriceAlert(PriceAlertModel model);
+
     public void uploadStorePrices(StoreCSVModel model);
 
     public void uploadStoreDiscounts(StoreCSVModel model);

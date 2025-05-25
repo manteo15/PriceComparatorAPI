@@ -14,6 +14,12 @@ public interface IProductPriceRepository extends JpaRepository<ProductPrice, Int
     @Query("Select pp from ProductPrice pp where pp.storeId = :storeId and pp.productId = :productId and pp.date <= :date order by pp.date")
     public List<ProductPrice> getAllByStoreIdUntilDateOrderedByDate(String productId, int storeId, LocalDate date);
 
+    @Query("Select pp from ProductPrice pp where pp.storeId = :storeId and pp.productId = :productId and pp.date >= :date order by pp.date")
+    public List<ProductPrice> getCurrentAndFutureOfProductFromStore(String productId, int storeId, LocalDate date);
+
     @Query("Select Distinct storeId from ProductPrice pp where pp.productId = :productId and pp.date <= :date")
     public List<Integer> getStoreIdsUntilDate(String productId, LocalDate date);
+
+    @Query("Select Distinct storeId from ProductPrice pp where pp.productId = :productId")
+    public List<Integer> getStoreIdsWithProduct(String productId);
 }

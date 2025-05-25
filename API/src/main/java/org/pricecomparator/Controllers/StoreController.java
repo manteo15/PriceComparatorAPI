@@ -33,6 +33,23 @@ public class StoreController {
         return new ResponseEntity<>(storeService.createStore(storeName), HttpStatusCode.valueOf(201));
     }
 
+    @PostMapping("/uploadAll")
+    public HttpStatusCode uploadAllPricesAndDiscounts() {
+        storeService.uploadStorePrices(new StoreCSVModel("kaufland_2025-05-01.csv", "kaufland", "2025-05-01"));
+        storeService.uploadStorePrices(new StoreCSVModel("kaufland_2025-05-08.csv", "kaufland", "2025-05-08"));
+        storeService.uploadStorePrices(new StoreCSVModel("lidl_2025-05-01.csv", "lidl", "2025-05-01"));
+        storeService.uploadStorePrices(new StoreCSVModel("lidl_2025-05-08.csv", "lidl", "2025-05-08"));
+        storeService.uploadStorePrices(new StoreCSVModel("profi_2025-05-01.csv", "profi", "2025-05-01"));
+        storeService.uploadStorePrices(new StoreCSVModel("profi_2025-05-08.csv", "profi", "2025-05-08"));
+        storeService.uploadStoreDiscounts(new StoreCSVModel("kaufland_discounts_2025-05-01.csv", "kaufland", "2025-05-01"));
+        storeService.uploadStoreDiscounts(new StoreCSVModel("kaufland_discounts_2025-05-08.csv", "kaufland", "2025-05-08"));
+        storeService.uploadStoreDiscounts(new StoreCSVModel("lidl_discounts_2025-05-01.csv", "lidl", "2025-05-01"));
+        storeService.uploadStoreDiscounts(new StoreCSVModel("lidl_discounts_2025-05-08.csv", "lidl", "2025-05-08"));
+        storeService.uploadStoreDiscounts(new StoreCSVModel("profi_discounts_2025-05-01.csv", "profi", "2025-05-01"));
+        storeService.uploadStoreDiscounts(new StoreCSVModel("profi_discounts_2025-05-08.csv", "profi", "2025-05-08"));
+        return HttpStatusCode.valueOf(200);
+    }
+
     /*
     The model contains the name of the file, the store name and the date when the prices are added
      */
@@ -102,5 +119,14 @@ public class StoreController {
     @GetMapping("/priceHistory")
     public ResponseEntity<List<DynamicPriceHistoryModel>> getPriceHistory(@RequestBody PriceHistoryFilterModel model){
         return new ResponseEntity<>(storeService.getDynamicPriceHistory(model), HttpStatusCode.valueOf(200));
+    }
+
+    /*
+    The model contains current date, product id and set target price
+    Return a list of periods, the price and store when the price drops below set target price
+     */
+    @GetMapping("/priceAlert")
+    public ResponseEntity<List<PriceTrendModel>> getPriceAlert(@RequestBody PriceAlertModel model){
+        return new ResponseEntity<>(storeService.getPriceAlert(model), HttpStatusCode.valueOf(200));
     }
 }
